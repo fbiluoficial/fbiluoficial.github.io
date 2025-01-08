@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Abate - Controle de Vendas</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body class="light-mode">
+    <header>
+        <h1>Meu Abate</h1>
+        <div class="header-controls">
+            <div class="custom-select-container">
+                <div class="custom-select" id="customCategorySelect">
+                    <div class="selected-option">Todas as Categorias</div>
+                    <div class="options-container"></div>
+                </div>
+            </div>
+            <button id="addCategoryBtn" class="add-button">Nova Categoria</button>
+            <div class="history-controls">
+                <button id="undoBtn" class="icon-button" title="Desfazer (Ctrl+Z)" type="button">
+                    <span class="material-icons">undo</span>
+                </button>
+                <button id="redoBtn" class="icon-button" title="Refazer (Ctrl+Y)" type="button">
+                    <span class="material-icons">redo</span>
+                </button>
+            </div>
+            <button id="themeToggle" class="theme-toggle">
+                <span class="theme-toggle-icon">🌙</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="summary-cards">
+        <div class="card">
+            <h3>Lucro Total Recebido</h3>
+            <p id="totalReceived">R$ 0,00</p>
+        </div>
+        <div class="card">
+            <h3>Total Pendente</h3>
+            <p id="totalPending">R$ 0,00</p>
+        </div>
+    </div>
+
+    <main>
+        <div class="action-buttons-container">
+            <button id="addRecordBtn" class="floating-button">
+                <i class="material-icons">add</i>
+                <span>Novo Registro</span>
+            </button>
+        </div>
+
+        <div class="table-container">
+            <table id="recordsTable">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Peso (kg)</th>
+                        <th>Preço/kg</th>
+                        <th>Valor Total</th>
+                        <th>Nome</th>
+                        <th>Categoria</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="bottom-actions">
+        </div>
+    </main>
+
+    <!-- Modal para adicionar/editar registros -->
+    <div id="recordModal" class="modal">
+        <div class="modal-content record-modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Adicionar Registro</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="recordForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="weight">
+                            <i class="material-icons">scale</i>
+                            Peso (kg):
+                        </label>
+                        <input type="number" id="weight" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pricePerKg">
+                            <i class="material-icons">payments</i>
+                            Preço por kg:
+                        </label>
+                        <input type="number" id="pricePerKg" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userName">
+                            <i class="material-icons">person</i>
+                            Nome:
+                        </label>
+                        <input type="text" id="userName" placeholder="Digite o nome do cliente">
+                    </div>
+                    <div class="form-group">
+                        <label for="recordCategory">
+                            <i class="material-icons">category</i>
+                            Categoria:
+                        </label>
+                        <select id="recordCategory">
+                            <option value="">Selecione uma categoria</option>
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="isPaid">
+                            <span class="checkbox-text">
+                                <i class="material-icons">paid</i>
+                                Pago
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-button" onclick="closeModal('recordModal')">Cancelar</button>
+                    <button type="submit" class="submit-button">
+                        <i class="material-icons">save</i>
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para novas anotações -->
+    <div id="noteModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Nova Anotação</h2>
+            <form id="noteForm">
+                <div class="form-group">
+                    <label for="noteText">Anotação:</label>
+                    <textarea id="noteText" required></textarea>
+                </div>
+                <button type="submit" class="submit-button">Salvar Anotação</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar/editar categorias -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="categoryModalTitle">Nova Categoria</h2>
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label for="categoryName">Nome da Categoria:</label>
+                    <input type="text" id="categoryName" required>
+                </div>
+                <button type="submit" class="submit-button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Menu de contexto para categorias -->
+    <div id="categoryContextMenu" class="context-menu">
+        <ul>
+            <li id="editCategory">Editar Categoria</li>
+            <li id="deleteCategory">Excluir Categoria</li>
+        </ul>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
