@@ -1,28 +1,16 @@
 // Estado da aplicação
 let records = JSON.parse(localStorage.getItem('records')) || [];
-let notes = JSON.parse(localStorage.getItem('notes')) || [];
 let categories = JSON.parse(localStorage.getItem('categories')) || [];
 let editingId = null;
 let editingCategoryId = null;
 let currentCategoryFilter = '';
 
-// Elementos DOM
-const recordModal = document.getElementById('recordModal');
-const noteModal = document.getElementById('noteModal');
-const categoryModal = document.getElementById('categoryModal');
-const recordForm = document.getElementById('recordForm');
-const noteForm = document.getElementById('noteForm');
-const categoryForm = document.getElementById('categoryForm');
-const tableBody = document.getElementById('tableBody');
-const addRecordBtn = document.getElementById('addRecordBtn');
-const newNoteBtn = document.getElementById('newNoteBtn');
-const addCategoryBtn = document.getElementById('addCategoryBtn');
-const categorySelect = document.getElementById('categorySelect');
-const recordCategory = document.getElementById('recordCategory');
-const categoryContextMenu = document.getElementById('categoryContextMenu');
-const closeBtns = document.querySelectorAll('.close');
+// Sistema de histórico
+const maxHistorySteps = 3;
+let history = [];
+let currentHistoryIndex = -1;
 
-// Funções de utilidade
+// Funções de formatação
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -34,14 +22,54 @@ const calculateTotal = (weight, pricePerKg) => {
     return weight * pricePerKg;
 };
 
-const getCategoryName = (categoryId) => {
-    if (!categoryId) return 'Sem Categoria';
-    const category = categories.find(cat => cat.id === parseInt(categoryId));
-    return category ? category.name : 'Sem Categoria';
-};
+// Funções de histórico
+function saveHistoryState(action) {
+    const state = {
+        records: JSON.parse(JSON.stringify(records)),
+        categories: JSON.parse(JSON.stringify(categories)),
+        action: action
+    };
+    
+    if (currentHistoryIndex < history.length - 1) {
+        history = history.slice(0, currentHistoryIndex + 1);
+    }
+    
+    history.push(state);
+    if (history.length > maxHistorySteps) {
+        history.shift();
+    }
+    currentHistoryIndex = history.length - 1;
+    updateHistoryButtons();
+}
 
-// Funções de atualização da interface
-const updateSummary = () => {
+function undo() {
+    if (currentHistoryIndex > 0) {
+        currentHistoryIndex--;
+        const state = history[currentHistoryIndex];
+        records = JSON.parse(JSON.stringify(state.records));
+        categories = JSON.parse(JSON.stringify(state.categories));
+        saveToLocalStorage();
+        renderTable();
+        updateCategorySelects();
+        updateHistoryButtons();
+    }
+}
+
+function redo() {
+    if (currentHistoryIndex < history.length - 1) {
+        currentHistoryIndex++;
+        const state = history[currentHistoryIndex];
+        records = JSON.parse(JSON.stringify(state.records));
+        categories = JSON.parse(JSON.stringify(state.categories));
+        saveToLocalStorage();
+        renderTable();
+        updateCategorySelects();
+        updateHistoryButtons();
+    }
+}
+
+// Funções de UI
+function updateSummary() {
     const filteredRecords = currentCategoryFilter 
         ? records.filter(record => record.categoryId === parseInt(currentCategoryFilter))
         : records;
@@ -56,73 +84,107 @@ const updateSummary = () => {
 
     document.getElementById('totalReceived').textContent = formatCurrency(totalReceived);
     document.getElementById('totalPending').textContent = formatCurrency(totalPending);
-};
+}
 
-const renderTable = () => {
+function renderTable() {
+    const tableBody = document.getElementById('tableBody');
     tableBody.innerHTML = '';
+
     const filteredRecords = currentCategoryFilter 
         ? records.filter(record => record.categoryId === parseInt(currentCategoryFilter))
         : records;
 
     filteredRecords.forEach((record, index) => {
         const total = calculateTotal(record.weight, record.pricePerKg);
-        const row = document.createElement('tr');
-        if (record.isPaid) {
-            row.classList.add('checked-row');
-        }
-        row.innerHTML = `
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
             <td>
-                <div class="checkbox-container">
-                    ${record.isPaid ? '<i class="material-icons">check_circle</i>' : ''}
-                    <input type="checkbox" ${record.isPaid ? 'checked' : ''} 
-                    onchange="togglePayment(${index})">
-                </div>
+                <button onclick="togglePayment(${index})" class="status-button ${record.isPaid ? 'paid' : 'pending'}">
+                    ${record.isPaid ? 'Pago' : 'Pendente'}
+                </button>
             </td>
-            <td>${record.weight.toFixed(2)}</td>
+            <td>${record.weight} kg</td>
             <td>${formatCurrency(record.pricePerKg)}</td>
             <td>${formatCurrency(total)}</td>
-            <td>${record.userName || ''}</td>
+            <td>${record.userName || '-'}</td>
             <td>${getCategoryName(record.categoryId)}</td>
-            <td class="action-buttons">
-                <button class="edit-button" onclick="editRecord(${index})">Editar</button>
-                <button class="delete-button" onclick="deleteRecord(${index})">Excluir</button>
+            <td>
+                <button onclick="editRecord(${index})" class="action-button edit">
+                    <span class="material-icons">edit</span>
+                </button>
+                <button onclick="deleteRecord(${index})" class="action-button delete">
+                    <span class="material-icons">delete</span>
+                </button>
             </td>
         `;
-        tableBody.appendChild(row);
+        tableBody.appendChild(tr);
     });
+
     updateSummary();
-    saveToLocalStorage();
-};
+}
+
+function updateCategorySelects() {
+    const customSelect = document.getElementById('customCategorySelect');
+    const optionsContainer = customSelect.querySelector('.options-container');
+    const selectedOption = customSelect.querySelector('.selected-option');
+    const recordCategory = document.getElementById('recordCategory');
+
+    // Atualizar select personalizado
+    optionsContainer.innerHTML = '<div class="option" data-value="">Todas as Categorias</div>';
+    categories.forEach(category => {
+        const option = document.createElement('div');
+        option.className = 'option';
+        option.dataset.value = category.id;
+        option.innerHTML = `
+            ${category.name}
+            <span class="material-icons delete-icon">close</span>
+        `;
+        
+        option.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('delete-icon')) {
+                currentCategoryFilter = category.id;
+                selectedOption.textContent = category.name;
+                customSelect.classList.remove('open');
+                renderTable();
+            }
+        });
+
+        const deleteIcon = option.querySelector('.delete-icon');
+        deleteIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm(`Tem certeza que deseja excluir a categoria "${category.name}"?`)) {
+                deleteCategory(category.id);
+            }
+        });
+
+        optionsContainer.appendChild(option);
+    });
+
+    // Atualizar select do formulário
+    recordCategory.innerHTML = '<option value="">Selecione uma categoria</option>';
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        recordCategory.appendChild(option);
+    });
+}
 
 // Funções de gerenciamento de dados
-const saveToLocalStorage = () => {
+function saveToLocalStorage() {
     localStorage.setItem('records', JSON.stringify(records));
-    localStorage.setItem('notes', JSON.stringify(notes));
     localStorage.setItem('categories', JSON.stringify(categories));
-};
+}
 
-const updateCategorySelects = () => {
-    // Atualiza o select de filtro
-    categorySelect.innerHTML = '<option value="">Todas as Categorias</option>';
-    // Atualiza o select do formulário
-    recordCategory.innerHTML = '<option value="">Selecione uma categoria</option>';
-    
-    categories.forEach(category => {
-        // Adiciona ao select de filtro
-        const filterOption = document.createElement('option');
-        filterOption.value = category.id;
-        filterOption.textContent = category.name;
-        categorySelect.appendChild(filterOption);
-        
-        // Adiciona ao select do formulário
-        const formOption = document.createElement('option');
-        formOption.value = category.id;
-        formOption.textContent = category.name;
-        recordCategory.appendChild(formOption);
-    });
-};
+function getCategoryName(categoryId) {
+    if (!categoryId) return 'Sem Categoria';
+    const category = categories.find(cat => cat.id === parseInt(categoryId));
+    return category ? category.name : 'Sem Categoria';
+}
 
-const addCategory = (categoryName) => {
+// Funções CRUD
+function addCategory(categoryName) {
+    saveHistoryState('Adição de categoria');
     const newCategory = {
         id: Date.now(),
         name: categoryName
@@ -130,201 +192,195 @@ const addCategory = (categoryName) => {
     categories.push(newCategory);
     saveToLocalStorage();
     updateCategorySelects();
-};
+}
 
-const updateCategory = (id, newName) => {
-    const category = categories.find(cat => cat.id === parseInt(id));
-    if (category) {
-        category.name = newName;
-        saveToLocalStorage();
-        updateCategorySelects();
-        renderTable();
-    }
-};
-
-const deleteCategory = (id) => {
-    const index = categories.findIndex(cat => cat.id === parseInt(id));
-    if (index !== -1) {
-        if (confirm('Tem certeza que deseja excluir esta categoria? Os registros associados serão mantidos, mas ficarão sem categoria.')) {
-            // Atualiza os registros que usavam esta categoria
-            records.forEach(record => {
-                if (record.categoryId === parseInt(id)) {
-                    record.categoryId = null;
-                }
-            });
-            
-            categories.splice(index, 1);
-            saveToLocalStorage();
-            updateCategorySelects();
-            renderTable();
+function deleteCategory(id) {
+    saveHistoryState('Exclusão de categoria');
+    categories = categories.filter(cat => cat.id !== parseInt(id));
+    records = records.map(record => {
+        if (record.categoryId === parseInt(id)) {
+            return { ...record, categoryId: null };
         }
+        return record;
+    });
+    
+    if (currentCategoryFilter === id) {
+        currentCategoryFilter = '';
+        document.querySelector('.selected-option').textContent = 'Todas as Categorias';
     }
-};
-
-// Event Listeners
-categorySelect.addEventListener('change', (e) => {
-    currentCategoryFilter = e.target.value;
+    
+    saveToLocalStorage();
+    updateCategorySelects();
     renderTable();
-});
+}
 
-addCategoryBtn.addEventListener('click', () => {
-    editingCategoryId = null;
-    categoryForm.reset();
-    document.getElementById('categoryModalTitle').textContent = 'Nova Categoria';
-    categoryModal.style.display = 'block';
-});
+function togglePayment(index) {
+    saveHistoryState('Alteração de pagamento');
+    records[index].isPaid = !records[index].isPaid;
+    saveToLocalStorage();
+    renderTable();
+}
 
-window.editRecord = (index) => {
+function editRecord(index) {
     editingId = index;
     const record = records[index];
+    
     document.getElementById('weight').value = record.weight;
     document.getElementById('pricePerKg').value = record.pricePerKg;
-    document.getElementById('isPaid').checked = record.isPaid;
     document.getElementById('userName').value = record.userName || '';
     document.getElementById('recordCategory').value = record.categoryId || '';
+    document.getElementById('isPaid').checked = record.isPaid;
+    
     document.getElementById('modalTitle').textContent = 'Editar Registro';
-    recordModal.style.display = 'block';
-};
+    document.getElementById('recordModal').style.display = 'block';
+}
 
-recordForm.addEventListener('submit', (e) => {
+function deleteRecord(index) {
+    if (confirm('Tem certeza que deseja excluir este registro?')) {
+        saveHistoryState('Exclusão de registro');
+        records.splice(index, 1);
+        saveToLocalStorage();
+        renderTable();
+    }
+}
+
+// Event Listeners
+document.getElementById('addRecordBtn').addEventListener('click', () => {
+    editingId = null;
+    document.getElementById('recordForm').reset();
+    document.getElementById('modalTitle').textContent = 'Novo Registro';
+    document.getElementById('recordModal').style.display = 'block';
+});
+
+document.getElementById('recordForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    
     const formData = {
         weight: parseFloat(document.getElementById('weight').value),
         pricePerKg: parseFloat(document.getElementById('pricePerKg').value),
-        isPaid: document.getElementById('isPaid').checked,
         userName: document.getElementById('userName').value.trim(),
-        categoryId: document.getElementById('recordCategory').value ? parseInt(document.getElementById('recordCategory').value) : null
+        categoryId: document.getElementById('recordCategory').value ? parseInt(document.getElementById('recordCategory').value) : null,
+        isPaid: document.getElementById('isPaid').checked
     };
-
+    
     if (editingId !== null) {
-        records[editingId] = formData;
+        saveHistoryState('Edição de registro');
+        records[editingId] = { ...records[editingId], ...formData };
+        editingId = null;
     } else {
-        records.push(formData);
+        saveHistoryState('Novo registro');
+        records.push({ 
+            id: Date.now(),
+            ...formData 
+        });
     }
-
-    recordModal.style.display = 'none';
+    
+    saveToLocalStorage();
     renderTable();
+    closeModal('recordModal');
+    document.getElementById('recordForm').reset();
+});
+
+document.getElementById('categoryForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const categoryName = document.getElementById('categoryName').value.trim();
+    
+    if (categoryName) {
+        if (editingCategoryId !== null) {
+            saveHistoryState('Edição de categoria');
+            const category = categories.find(cat => cat.id === editingCategoryId);
+            if (category) {
+                category.name = categoryName;
+            }
+            editingCategoryId = null;
+        } else {
+            addCategory(categoryName);
+        }
+        
+        saveToLocalStorage();
+        updateCategorySelects();
+        closeModal('categoryModal');
+        e.target.reset();
+    }
+});
+
+document.getElementById('addCategoryBtn').addEventListener('click', () => {
+    document.getElementById('categoryModalTitle').textContent = 'Nova Categoria';
+    document.getElementById('categoryModal').style.display = 'block';
+    editingCategoryId = null;
+});
+
+document.getElementById('customCategorySelect').addEventListener('click', (e) => {
+    if (e.target.closest('.selected-option')) {
+        document.getElementById('customCategorySelect').classList.toggle('open');
+    }
+});
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#customCategorySelect')) {
+        document.getElementById('customCategorySelect').classList.remove('open');
+    }
+});
+
+// Botões de histórico
+document.getElementById('undoBtn').addEventListener('click', undo);
+document.getElementById('redoBtn').addEventListener('click', redo);
+
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+    } else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) {
+        e.preventDefault();
+        redo();
+    }
+});
+
+function updateHistoryButtons() {
+    const undoBtn = document.getElementById('undoBtn');
+    const redoBtn = document.getElementById('redoBtn');
+    
+    if (undoBtn && redoBtn) {
+        undoBtn.disabled = currentHistoryIndex <= 0;
+        redoBtn.disabled = currentHistoryIndex >= history.length - 1;
+    }
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Fechar modais quando clicar no X ou fora do modal
+document.querySelectorAll('.close').forEach(closeBtn => {
+    closeBtn.addEventListener('click', () => {
+        closeBtn.closest('.modal').style.display = 'none';
+    });
+});
+
+window.addEventListener('click', (e) => {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
+
+// Theme toggle
+document.getElementById('themeToggle').addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    document.getElementById('themeToggle').querySelector('.theme-toggle-icon').textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
 });
 
 // Inicialização
 updateCategorySelects();
 renderTable();
+updateHistoryButtons();
 
-window.togglePayment = (index) => {
-    records[index].isPaid = !records[index].isPaid;
-    renderTable();
-};
-
-window.deleteRecord = (index) => {
-    if (confirm('Tem certeza que deseja excluir este registro?')) {
-        records.splice(index, 1);
-        renderTable();
-    }
-};
-
-addRecordBtn.addEventListener('click', () => {
-    editingId = null;
-    recordForm.reset();
-    categorySelect.value = '';
-    document.getElementById('modalTitle').textContent = 'Adicionar Registro';
-    recordModal.style.display = 'block';
-});
-
-newNoteBtn.addEventListener('click', () => {
-    noteForm.reset();
-    noteModal.style.display = 'block';
-});
-
-closeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        recordModal.style.display = 'none';
-        noteModal.style.display = 'none';
-        categoryModal.style.display = 'none';
-    });
-});
-
-window.addEventListener('click', (event) => {
-    if (event.target === recordModal) {
-        recordModal.style.display = 'none';
-    }
-    if (event.target === noteModal) {
-        noteModal.style.display = 'none';
-    }
-    if (event.target === categoryModal) {
-        categoryModal.style.display = 'none';
-    }
-});
-
-noteForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const noteText = document.getElementById('noteText').value;
-    addNote(noteText);
-    noteModal.style.display = 'none';
-    alert('Anotação salva com sucesso!');
-});
-
-const addNote = (note) => {
-    notes.push({
-        text: note,
-        date: new Date().toISOString()
-    });
-    saveToLocalStorage();
-};
-
-categoryForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const categoryName = document.getElementById('categoryName').value.trim();
-    
-    if (editingCategoryId !== null) {
-        updateCategory(editingCategoryId, categoryName);
-    } else {
-        addCategory(categoryName);
-    }
-    
-    categoryModal.style.display = 'none';
-});
-
-categorySelect.addEventListener('contextmenu', (e) => {
-    if (e.target.tagName === 'OPTION' && e.target.value !== '') {
-        e.preventDefault();
-        const rect = e.target.getBoundingClientRect();
-        categoryContextMenu.style.display = 'block';
-        categoryContextMenu.style.left = e.clientX + 'px';
-        categoryContextMenu.style.top = e.clientY + 'px';
-        editingCategoryId = parseInt(e.target.value);
-    }
-});
-
-document.getElementById('editCategory').addEventListener('click', () => {
-    const category = categories.find(cat => cat.id === editingCategoryId);
-    if (category) {
-        document.getElementById('categoryName').value = category.name;
-        document.getElementById('categoryModalTitle').textContent = 'Editar Categoria';
-        categoryModal.style.display = 'block';
-        categoryContextMenu.style.display = 'none';
-    }
-});
-
-document.getElementById('deleteCategory').addEventListener('click', () => {
-    deleteCategory(editingCategoryId);
-    categoryContextMenu.style.display = 'none';
-});
-
-document.addEventListener('click', (e) => {
-    if (!categoryContextMenu.contains(e.target)) {
-        categoryContextMenu.style.display = 'none';
-    }
-});
-
-// Função para fechar modal
-window.closeModal = (modalId) => {
-    document.getElementById(modalId).style.display = 'none';
-};
-
-// Theme toggle
-themeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    themeToggle.querySelector('.theme-toggle-icon').textContent = isDark ? '☀️' : '🌙';
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-});
+// Restaurar tema
+if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('themeToggle').querySelector('.theme-toggle-icon').textContent = '☀️';
+}

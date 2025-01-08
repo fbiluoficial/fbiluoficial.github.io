@@ -12,10 +12,21 @@
     <header>
         <h1>Meu Abate</h1>
         <div class="header-controls">
-            <select id="categorySelect">
-                <option value="">Todas as Categorias</option>
-            </select>
+            <div class="custom-select-container">
+                <div class="custom-select" id="customCategorySelect">
+                    <div class="selected-option">Todas as Categorias</div>
+                    <div class="options-container"></div>
+                </div>
+            </div>
             <button id="addCategoryBtn" class="add-button">Nova Categoria</button>
+            <div class="history-controls">
+                <button id="undoBtn" class="icon-button" title="Desfazer (Ctrl+Z)" type="button">
+                    <span class="material-icons">undo</span>
+                </button>
+                <button id="redoBtn" class="icon-button" title="Refazer (Ctrl+Y)" type="button">
+                    <span class="material-icons">redo</span>
+                </button>
+            </div>
             <button id="themeToggle" class="theme-toggle">
                 <span class="theme-toggle-icon">🌙</span>
             </button>
@@ -60,7 +71,6 @@
         </div>
         
         <div class="bottom-actions">
-            <button id="newNoteBtn" class="note-button">Nova Anotação</button>
         </div>
     </main>
 
