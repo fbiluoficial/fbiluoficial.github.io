@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0d0d0d;
+  --foreground: #ffffff;
+  --accent-cyan: #00ffff;
+  --accent-purple: #9d00ff;
+  --text-secondary: #cccccc;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+
+  p,
+  span {
+    color: var(--text-secondary);
+  }
+}
+
+/* Removendo as definições de classe que estavam causando problemas */
+/* Elas foram movidas para custom-styles.css */

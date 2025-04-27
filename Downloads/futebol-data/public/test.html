@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutebolData - Teste</title>
+  <style>
+    :root {
+      --background: #0d0d0d;
+      --foreground: #ffffff;
+      --accent-cyan: #00ffff;
+      --accent-purple: #9d00ff;
+      --text-secondary: #cccccc;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      font-family: 'Rajdhani', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    .glass-card {
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 15px 20px;
+      margin-bottom: 30px;
+    }
+
+    .title {
+      margin-left: 15px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .neon-text {
+      color: var(--accent-cyan);
+    }
+
+    .purple-text {
+      color: var(--accent-purple);
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      padding: 20px;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .team {
+      flex: 1;
+      text-align: center;
+    }
+
+    .vs {
+      margin: 0 10px;
+      color: var(--accent-cyan);
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .score-box {
+      text-align: center;
+    }
+
+    .score-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .score {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .details {
+      margin-top: 15px;
+    }
+
+    .detail-row {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .detail-label {
+      color: var(--text-secondary);
+    }
+
+    .detail-value {
+      color: var(--accent-cyan);
+      font-weight: 500;
+    }
+
+    .floating-button {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(13, 13, 13, 0.8);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      font-size: 24px;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+      cursor: pointer;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <header class="glass-card header">
+    <div class="menu-icon">☰</div>
+    <div class="title">
+      <span class="neon-text">Futebol</span><span class="purple-text">Data</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <h2>Histórico de Partidas</h2>
+    
+    <div class="card-grid">
+      <div class="glass-card card">
+        <div class="card-header">
+          <div class="team">Barcelona</div>
+          <div class="vs">VS</div>
+          <div class="team">Real Madrid</div>
+        </div>
+        
+        <div class="score-row">
+          <div class="score-box">
+            <div class="score-label">HT</div>
+            <div class="score">1-0</div>
+          </div>
+          <div class="score-box">
+            <div class="score-label">FT</div>
+            <div class="score">3-1</div>
+          </div>
+        </div>
+        
+        <div class="details">
+          <div class="detail-row">
+            <span class="detail-label">Time Favorito: </span>
+            <span class="detail-value">Barcelona</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Primeiro Gol: </span>
+            <span class="detail-value">Minuto 23</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Gol FT: </span>
+            <span class="detail-value">Antes do min 75</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="glass-card card">
+        <div class="card-header">
+          <div class="team">Liverpool</div>
+          <div class="vs">VS</div>
+          <div class="team">Manchester City</div>
+        </div>
+        
+        <div class="score-row">
+          <div class="score-box">
+            <div class="score-label">HT</div>
+            <div class="score">0-0</div>
+          </div>
+          <div class="score-box">
+            <div class="score-label">FT</div>
+            <div class="score">2-1</div>
+          </div>
+        </div>
+        
+        <div class="details">
+          <div class="detail-row">
+            <span class="detail-label">Time Favorito: </span>
+            <span class="detail-value">Manchester City</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Primeiro Gol: </span>
+            <span class="detail-value">Minuto 58</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Gol FT: </span>
+            <span class="detail-value">Após o min 75</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="floating-button">+</div>
+</body>
+</html>

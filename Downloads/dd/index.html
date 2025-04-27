@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bom Dia Verde</title>
+    <style>
+        /* Estilos para o corpo da página */
+        body {
+            display: flex;             /* Usa Flexbox para facilitar o alinhamento */
+            flex-direction: column;    /* Organiza os itens em coluna (um abaixo do outro) */
+            justify-content: center;   /* Centraliza verticalmente no espaço disponível */
+            align-items: center;       /* Centraliza horizontalmente */
+            min-height: 100vh;         /* Garante que o corpo ocupe pelo menos toda a altura da tela */
+            margin: 0;                 /* Remove margens padrão do body */
+            font-family: sans-serif;   /* Define uma fonte básica */
+            background-color: #f0f0f0; /* Um fundo suave para a página (opcional) */
+        }
+
+        /* Estilos para o título principal (h1) */
+        h1 {
+            font-size: 3em;        /* Tamanho grande para destaque */
+            color: #333;           /* Cor do texto (opcional) */
+            margin-bottom: 20px;   /* Espaço abaixo do título */
+            text-align: center;    /* Garante que o texto dentro do h1 esteja centralizado */
+        }
+
+        /* Estilos para a caixa verde */
+        #caixa-verde {
+            background-color: rgb(2, 5, 217); /* Cor de fundo verde */
+            width: 300px;          /* Largura da caixa */
+            height: 150px;         /* Altura da caixa */
+            border-radius: 10px;   /* Cantos arredondados (opcional) */
+            padding: 20px;         /* Espaçamento interno */
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2); /* Sombra suave (opcional) */
+
+            /* Para centralizar o texto dentro da caixa verde também */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;          /* Cor do texto dentro da caixa para contraste */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>bom dia</h1>
+
+    <div id="caixa-verde">
+        <span>Caixa com fundo verde</span>
+    </div>
+
+</body>
+</html>
